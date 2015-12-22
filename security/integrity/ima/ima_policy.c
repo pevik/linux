@@ -135,6 +135,8 @@ static struct ima_rule_entry default_appraise_rules[] = {
 
 static LIST_HEAD(ima_default_rules);
 static LIST_HEAD(ima_policy_rules);
+static LIST_HEAD(ima_temp_rules);
+
 static struct list_head *ima_rules = &ima_default_rules;
 
 static DEFINE_MUTEX(ima_rules_mutex);
@@ -412,6 +414,14 @@ void __init ima_init_policy(void)
 			      &ima_default_rules);
 	}
 
+}
+
+/* Make sure we have a valid policy, at least containing some rules. */
+int ima_check_policy()
+{
+	if (list_empty(&ima_temp_rules))
+		return -EINVAL;
+	return 0;
 }
 
 /**
