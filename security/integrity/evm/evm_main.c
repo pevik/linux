@@ -23,6 +23,7 @@
 #include <linux/integrity.h>
 #include <linux/evm.h>
 #include <linux/magic.h>
+#include <linux/lsm_hooks.h>
 
 #include <crypto/hash.h>
 #include <crypto/hash_info.h>
@@ -548,6 +549,22 @@ out:
 }
 EXPORT_SYMBOL_GPL(evm_inode_init_security);
 
+static int evm_inode_copy_up_xattr(const char *name)
+{
+	/* The copy_up hook above sets the initial context on an inode, but we
+	 * don't then want to overwrite it by blindly copying all the lower
+	 * xattrs up.  Instead, we have to filter out SELinux-related xattrs.
+	 */
+	if (strcmp(name, XATTR_NAME_EVM) == 0 ||
+			strcmp(name, XATTR_NAME_IMA) == 0)
+		return 1; /* Discard */
+	/*
+	 * Any other attribute apart from SELINUX is not claimed, supported
+	 * by selinux.
+	 */
+	return -EOPNOTSUPP;
+}
+
 #ifdef CONFIG_EVM_LOAD_X509
 void __init evm_load_x509(void)
 {
@@ -559,12 +576,18 @@ void __init evm_load_x509(void)
 }
 #endif
 
+static struct security_hook_list evm_hooks[] __lsm_ro_after_init = {
+	LSM_HOOK_INIT(inode_copy_up_xattr, evm_inode_copy_up_xattr)
+};
+
 static int __init init_evm(void)
 {
 	int error;
 	struct list_head *pos, *q;
 
 	evm_init_config();
+
+	security_add_hooks(evm_hooks, ARRAY_SIZE(evm_hooks), "evm");
 
 	error = integrity_init_keyring(INTEGRITY_KEYRING_EVM);
 	if (error)
