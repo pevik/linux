@@ -2908,8 +2908,10 @@ int vfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	if (error)
 		return error;
 	error = dir->i_op->create(dir, dentry, mode, want_excl);
-	if (!error)
+	if (!error) {
 		fsnotify_create(dir, dentry);
+		ima_post_create_file(dentry->d_inode);
+	}
 	return error;
 }
 EXPORT_SYMBOL(vfs_create);
