@@ -397,14 +397,14 @@ int ima_file_check(struct file *file, int mask)
 EXPORT_SYMBOL_GPL(ima_file_check);
 
 /**
- * ima_post_create_tmpfile - mark newly created tmpfile as new
- * @file : newly created tmpfile
+ * ima_post_create_file - mark newly created file as new
+ * @file : newly created file
  *
- * No measuring, appraising or auditing of newly created tmpfiles is needed.
+ * No measuring, appraising or auditing of newly created files is needed.
  * Skip calling process_measurement(), but indicate which newly, created
- * tmpfiles are in policy.
+ * files are in policy.
  */
-void ima_post_create_tmpfile(struct inode *inode)
+void ima_post_create_file(struct inode *inode)
 {
 	struct integrity_iint_cache *iint;
 	int must_appraise;
