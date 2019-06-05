@@ -242,6 +242,9 @@ static int evm_calc_hmac_or_hash(struct dentry *dentry,
 		if (is_ima)
 			ima_present = true;
 	}
+
+	/* Use the real i_ino to calculate the HMAC */
+	inode = d_real_inode(dentry);
 	hmac_add_misc(desc, inode, type, data->digest);
 
 	/* Portable EVM signatures must include an IMA hash */
