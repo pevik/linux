@@ -793,7 +793,7 @@ static void delayedwork_callback(struct work_struct *work)
 		break;
 	case WORKITEM_TYPE_UNKNOWN:
 		retval = logi_dj_recv_query_paired_devices(djrcv_dev);
-		if (retval) {
+		if (retval < 0) {
 			hid_err(djrcv_dev->hidpp, "%s: logi_dj_recv_query_paired_devices error: %d\n",
 				__func__, retval);
 		}
