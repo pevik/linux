@@ -1168,6 +1168,7 @@ static void nfsd4_init_copy_res(struct nfsd4_copy *copy, bool sync)
 
 static ssize_t _nfsd_copy_file_range(struct nfsd4_copy *copy)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	ssize_t bytes_copied = 0;
 	size_t bytes_total = copy->cp_count;
 	u64 src_pos = copy->cp_src_pos;
@@ -1185,6 +1186,7 @@ static ssize_t _nfsd_copy_file_range(struct nfsd4_copy *copy)
 		src_pos += bytes_copied;
 		dst_pos += bytes_copied;
 	} while (bytes_total > 0 && !copy->cp_synchronous);
+	pr_err("%s:%d %s(): pev: return bytes_copied: %ld\n", __FILE__, __LINE__, __func__, bytes_copied); // FIXME: debug
 	return bytes_copied;
 }
 

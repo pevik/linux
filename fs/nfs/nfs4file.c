@@ -147,6 +147,7 @@ static ssize_t nfs4_copy_file_range(struct file *file_in, loff_t pos_in,
 				    struct file *file_out, loff_t pos_out,
 				    size_t count, unsigned int flags)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	ssize_t ret;
 
 	ret = __nfs4_copy_file_range(file_in, pos_in, file_out, pos_out, count,

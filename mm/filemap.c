@@ -3131,15 +3131,21 @@ int generic_copy_file_checks(struct file *file_in, loff_t pos_in,
 		return ret;
 
 	/* Don't touch certain kinds of inodes */
-	if (IS_IMMUTABLE(inode_out))
+	if (IS_IMMUTABLE(inode_out)) {
+		pr_err("%s:%d %s(): pev: IS_IMMUTABLE(inode_out), return -EPERM (%d)\n", __FILE__, __LINE__, __func__, -EPERM); // FIXME: debug
 		return -EPERM;
+	}
 
-	if (IS_SWAPFILE(inode_in) || IS_SWAPFILE(inode_out))
+	if (IS_SWAPFILE(inode_in) || IS_SWAPFILE(inode_out)) {
+		pr_err("%s:%d %s(): pev: IS_SWAPFILE(inode_in) || IS_SWAPFILE(inode_out), return -ETXTBSY (%d)\n", __FILE__, __LINE__, __func__, -ETXTBSY); // FIXME: debug
 		return -ETXTBSY;
+	}
 
 	/* Ensure offsets don't wrap. */
-	if (pos_in + count < pos_in || pos_out + count < pos_out)
+	if (pos_in + count < pos_in || pos_out + count < pos_out) {
+		pr_err("%s:%d %s(): pev: pos_in + count < pos_in || pos_out + count < pos_out, return -EOVERFLOW (%d)\n", __FILE__, __LINE__, __func__, -EOVERFLOW); // FIXME: debug
 		return -EOVERFLOW;
+	}
 
 	/* Shorten the copy to EOF */
 	size_in = i_size_read(inode_in);
@@ -3149,16 +3155,20 @@ int generic_copy_file_checks(struct file *file_in, loff_t pos_in,
 		count = min(count, size_in - (uint64_t)pos_in);
 
 	ret = generic_write_check_limits(file_out, pos_out, &count);
-	if (ret)
+	if (ret) {
+		pr_err("%s:%d %s(): pev: pev: return ret: %d\n", __FILE__, __LINE__, __func__, ret); // FIXME: debug
 		return ret;
+	}
 
 	/* Don't allow overlapped copying within the same file. */
 	if (inode_in == inode_out &&
 	    pos_out + count > pos_in &&
 	    pos_out < pos_in + count)
+		pr_err("%s:%d %s(): pev: inode_in == inode_out && ..., return -EINVAL (%d)\n", __FILE__, __LINE__, __func__, -EINVAL); // FIXME: debug
 		return -EINVAL;
 
 	*req_count = count;
+	pr_err("%s:%d %s(): pev: return 0\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	return 0;
 }
 

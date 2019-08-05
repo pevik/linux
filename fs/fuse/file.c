@@ -3116,6 +3116,7 @@ static ssize_t __fuse_copy_file_range(struct file *file_in, loff_t pos_in,
 				      struct file *file_out, loff_t pos_out,
 				      size_t len, unsigned int flags)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	struct fuse_file *ff_in = file_in->private_data;
 	struct fuse_file *ff_out = file_out->private_data;
 	struct inode *inode_in = file_inode(file_in);
@@ -3139,11 +3140,15 @@ static ssize_t __fuse_copy_file_range(struct file *file_in, loff_t pos_in,
 	bool is_unstable = (!fc->writeback_cache) &&
 			   ((pos_out + len) > inode_out->i_size);
 
-	if (fc->no_copy_file_range)
+	if (fc->no_copy_file_range) {
+		pr_err("%s:%d %s(): pev: return -EOPNOTSUPP\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return -EOPNOTSUPP;
+	}
 
-	if (file_inode(file_in)->i_sb != file_inode(file_out)->i_sb)
+	if (file_inode(file_in)->i_sb != file_inode(file_out)->i_sb) {
+		pr_err("%s:%d %s(): pev: return -EXDEV\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return -EXDEV;
+	}
 
 	if (fc->writeback_cache) {
 		inode_lock(inode_in);

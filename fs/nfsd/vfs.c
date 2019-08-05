@@ -567,6 +567,7 @@ __be32 nfsd4_clone_file_range(struct file *src, u64 src_pos, struct file *dst,
 ssize_t nfsd_copy_file_range(struct file *src, u64 src_pos, struct file *dst,
 			     u64 dst_pos, u64 count)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 
 	/*
 	 * Limit copy to 4MB to prevent indefinitely blocking an nfsd

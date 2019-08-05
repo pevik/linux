@@ -1155,6 +1155,7 @@ static ssize_t cifs_copy_file_range(struct file *src_file, loff_t off,
 				struct file *dst_file, loff_t destoff,
 				size_t len, unsigned int flags)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	unsigned int xid = get_xid();
 	ssize_t rc;
 
@@ -1165,6 +1166,7 @@ static ssize_t cifs_copy_file_range(struct file *src_file, loff_t off,
 	if (rc == -EOPNOTSUPP || rc == -EXDEV)
 		rc = generic_copy_file_range(src_file, off, dst_file,
 					     destoff, len, flags);
+	pr_err("%s:%d %s(): pev: return rc: %ld\n", __FILE__, __LINE__, __func__, rc); // FIXME: debug
 	return rc;
 }
 

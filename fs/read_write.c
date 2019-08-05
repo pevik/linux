@@ -364,12 +364,15 @@ out_putf:
 
 int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t count)
 {
+	//pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	struct inode *inode;
 	int retval = -EINVAL;
 
 	inode = file_inode(file);
-	if (unlikely((ssize_t) count < 0))
+	if (unlikely((ssize_t) count < 0)) {
+		pr_err("%s:%d %s(): pev: retvalurn retval: %ld\n", __FILE__, __LINE__, __func__, retval); // FIXME: debug
 		return retval;
+	}
 
 	/*
 	 * ranged mandatory locking does not apply to streams - it makes sense
@@ -379,23 +382,36 @@ int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t
 		loff_t pos = *ppos;
 
 		if (unlikely(pos < 0)) {
-			if (!unsigned_offsets(file))
+			if (!unsigned_offsets(file)) {
+			pr_err("%s:%d %s(): pev: retvalurn retval: %ld\n", __FILE__, __LINE__, __func__, retval); // FIXME: debug
 				return retval;
-			if (count >= -pos) /* both values are in 0..LLONG_MAX */
+			}
+			if (count >= -pos) { /* both values are in 0..LLONG_MAX */
+				pr_err("%s:%d %s(): return -EOVERFLOW\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				return -EOVERFLOW;
+			}
 		} else if (unlikely((loff_t) (pos + count) < 0)) {
-			if (!unsigned_offsets(file))
+			if (!unsigned_offsets(file)) {
+				pr_err("%s:%d %s(): pev: retvalurn retval: %ld\n", __FILE__, __LINE__, __func__, retval); // FIXME: debug
 				return retval;
+			}
 		}
 
 		if (unlikely(inode->i_flctx && mandatory_lock(inode))) {
 			retval = locks_mandatory_area(inode, file, pos, pos + count - 1,
 					read_write == READ ? F_RDLCK : F_WRLCK);
-			if (retval < 0)
+			if (retval < 0) {
+				pr_err("%s:%d %s(): pev: retvalurn retval: %ld\n", __FILE__, __LINE__, __func__, retval); // FIXME: debug
 				return retval;
+			}
 		}
 	}
 
+	/*
+	pr_err("%s:%d %s(): return security_file_permission\n", __FILE__, __LINE__, __func__,
+		security_file_permission(file,
+				read_write == READ ? MAY_READ : MAY_WRITE)); // FIXME: debug
+	*/
 	return security_file_permission(file,
 				read_write == READ ? MAY_READ : MAY_WRITE);
 }
@@ -1590,6 +1606,7 @@ ssize_t generic_copy_file_range(struct file *file_in, loff_t pos_in,
 				struct file *file_out, loff_t pos_out,
 				size_t len, unsigned int flags)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	return do_splice_direct(file_in, &pos_in, file_out, &pos_out,
 				len > MAX_RW_COUNT ? MAX_RW_COUNT : len, 0);
 }
@@ -1599,6 +1616,7 @@ static ssize_t do_copy_file_range(struct file *file_in, loff_t pos_in,
 				  struct file *file_out, loff_t pos_out,
 				  size_t len, unsigned int flags)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	/*
 	 * Although we now allow filesystems to handle cross sb copy, passing
 	 * a file of the wrong filesystem type to filesystem driver can result
@@ -1626,26 +1644,37 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 			    struct file *file_out, loff_t pos_out,
 			    size_t len, unsigned int flags)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	ssize_t ret;
 
-	if (flags != 0)
+	if (flags != 0) {
+		pr_err("%s:%d %s(): pev: flags != 0 => return -EINVAL\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return -EINVAL;
+	}
 
 	ret = generic_copy_file_checks(file_in, pos_in, file_out, pos_out, &len,
 				       flags);
-	if (unlikely(ret))
+	if (unlikely(ret)) {
+		pr_err("%s:%d %s(): pev: return ret: %ld\n", __FILE__, __LINE__, __func__, ret); // FIXME: debug
 		return ret;
+	}
 
 	ret = rw_verify_area(READ, file_in, &pos_in, len);
-	if (unlikely(ret))
+	if (unlikely(ret)) {
+		pr_err("%s:%d %s(): pev: return ret: %ld\n", __FILE__, __LINE__, __func__, ret); // FIXME: debug
 		return ret;
+	}
 
 	ret = rw_verify_area(WRITE, file_out, &pos_out, len);
-	if (unlikely(ret))
+	if (unlikely(ret)) {
+		pr_err("%s:%d %s(): pev: return ret: %ld\n", __FILE__, __LINE__, __func__, ret); // FIXME: debug
 		return ret;
+	}
 
-	if (len == 0)
+	if (len == 0) {
+		pr_err("%s:%d %s(): pev: return ret: 0\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return 0;
+	}
 
 	file_start_write(file_out);
 
@@ -1669,9 +1698,15 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 
 	ret = do_copy_file_range(file_in, pos_in, file_out, pos_out, len,
 				flags);
+	pr_err("%s:%d %s(): pev: ret: %ld\n", __FILE__, __LINE__, __func__, ret); // FIXME: debug
 	WARN_ON_ONCE(ret == -EOPNOTSUPP);
+	if (ret == -EOPNOTSUPP) {
+		pr_err("%s:%d %s(): ret == -EOPNOTSUPP\n", __FILE__, __LINE__, __func__); // FIXME: debug
+	}
+
 done:
 	if (ret > 0) {
+		pr_err("%s:%d %s(): ret > 0\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		fsnotify_access(file_in);
 		add_rchar(current, ret);
 		fsnotify_modify(file_out);
@@ -1683,6 +1718,7 @@ done:
 
 	file_end_write(file_out);
 
+	pr_err("%s:%d %s(): pev: return ret: %ld\n", __FILE__, __LINE__, __func__, ret); // FIXME: debug
 	return ret;
 }
 EXPORT_SYMBOL(vfs_copy_file_range);

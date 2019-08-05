@@ -2114,6 +2114,7 @@ static ssize_t ceph_copy_file_range(struct file *src_file, loff_t src_off,
 				    struct file *dst_file, loff_t dst_off,
 				    size_t len, unsigned int flags)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	ssize_t ret;
 
 	ret = __ceph_copy_file_range(src_file, src_off, dst_file, dst_off,
