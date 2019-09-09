@@ -1921,6 +1921,7 @@ SYSCALL_DEFINE3(getpeername, int, fd, struct sockaddr __user *, usockaddr,
 int __sys_sendto(int fd, void __user *buff, size_t len, unsigned int flags,
 		 struct sockaddr __user *addr,  int addr_len)
 {
+	pr_err_once("%s:%d %s(): START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	struct socket *sock;
 	struct sockaddr_storage address;
 	int err;
@@ -1929,11 +1930,15 @@ int __sys_sendto(int fd, void __user *buff, size_t len, unsigned int flags,
 	int fput_needed;
 
 	err = import_single_range(WRITE, buff, len, &iov, &msg.msg_iter);
-	if (unlikely(err))
+	if (unlikely(err)) {
+		pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		return err;
+	}
 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
-	if (!sock)
+	if (!sock) {
+		pr_err("%s:%d %s(): !sock (err: %d)\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		goto out;
+	}
 
 	msg.msg_name = NULL;
 	msg.msg_control = NULL;
@@ -1941,8 +1946,10 @@ int __sys_sendto(int fd, void __user *buff, size_t len, unsigned int flags,
 	msg.msg_namelen = 0;
 	if (addr) {
 		err = move_addr_to_kernel(addr, addr_len, &address);
-		if (err < 0)
+		if (err < 0) {
+			pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 			goto out_put;
+		}
 		msg.msg_name = (struct sockaddr *)&address;
 		msg.msg_namelen = addr_len;
 	}
@@ -1950,6 +1957,7 @@ int __sys_sendto(int fd, void __user *buff, size_t len, unsigned int flags,
 		flags |= MSG_DONTWAIT;
 	msg.msg_flags = flags;
 	err = sock_sendmsg(sock, &msg);
+	pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 
 out_put:
 	fput_light(sock->file, fput_needed);
@@ -1961,6 +1969,7 @@ SYSCALL_DEFINE6(sendto, int, fd, void __user *, buff, size_t, len,
 		unsigned int, flags, struct sockaddr __user *, addr,
 		int, addr_len)
 {
+	pr_err_once("%s:%d %s(): START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	return __sys_sendto(fd, buff, len, flags, addr, addr_len);
 }
 
@@ -2445,6 +2454,7 @@ SYSCALL_DEFINE4(sendmmsg, int, fd, struct mmsghdr __user *, mmsg,
 static int ___sys_recvmsg(struct socket *sock, struct user_msghdr __user *msg,
 			 struct msghdr *msg_sys, unsigned int flags, int nosec)
 {
+	//pr_err_once("%s:%d %s(): START: flags: %u\n", __FILE__, __LINE__, __func__, flags); // FIXME: debug
 	struct compat_msghdr __user *msg_compat =
 	    (struct compat_msghdr __user *)msg;
 	struct iovec iovstack[UIO_FASTIOV];
@@ -2466,8 +2476,10 @@ static int ___sys_recvmsg(struct socket *sock, struct user_msghdr __user *msg,
 		err = get_compat_msghdr(msg_sys, msg_compat, &uaddr, &iov);
 	else
 		err = copy_msghdr_from_user(msg_sys, msg, &uaddr, &iov);
-	if (err < 0)
+	if (err < 0) {
+		pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		return err;
+	}
 
 	cmsg_ptr = (unsigned long)msg_sys->msg_control;
 	msg_sys->msg_flags = flags & (MSG_CMSG_CLOEXEC|MSG_CMSG_COMPAT);
@@ -2478,29 +2490,37 @@ static int ___sys_recvmsg(struct socket *sock, struct user_msghdr __user *msg,
 	if (sock->file->f_flags & O_NONBLOCK)
 		flags |= MSG_DONTWAIT;
 	err = (nosec ? sock_recvmsg_nosec : sock_recvmsg)(sock, msg_sys, flags);
-	if (err < 0)
+	if (err < 0) {
+		pr_err("%s:%d %s(): 2nd err: %d, %s\n", __FILE__, __LINE__, __func__, err, (nosec ? "sock_recvmsg_nosec" : "sock_recvmsg")); // FIXME: debug
 		goto out_freeiov;
+	}
 	len = err;
 
 	if (uaddr != NULL) {
 		err = move_addr_to_user(&addr,
 					msg_sys->msg_namelen, uaddr,
 					uaddr_len);
-		if (err < 0)
+		if (err < 0) {
+			pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 			goto out_freeiov;
+		}
 	}
 	err = __put_user((msg_sys->msg_flags & ~MSG_CMSG_COMPAT),
 			 COMPAT_FLAGS(msg));
-	if (err)
+	if (err) {
+		pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		goto out_freeiov;
+	}
 	if (MSG_CMSG_COMPAT & flags)
 		err = __put_user((unsigned long)msg_sys->msg_control - cmsg_ptr,
 				 &msg_compat->msg_controllen);
 	else
 		err = __put_user((unsigned long)msg_sys->msg_control - cmsg_ptr,
 				 &msg->msg_controllen);
-	if (err)
+	if (err) {
+		pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		goto out_freeiov;
+	}
 	err = len;
 
 out_freeiov:
@@ -2523,27 +2543,34 @@ long __sys_recvmsg_sock(struct socket *sock, struct user_msghdr __user *msg,
 long __sys_recvmsg(int fd, struct user_msghdr __user *msg, unsigned int flags,
 		   bool forbid_cmsg_compat)
 {
+	pr_err_once("%s:%d %s(): flags: %u\n", __FILE__, __LINE__, __func__, flags); // FIXME: debug
 	int fput_needed, err;
 	struct msghdr msg_sys;
 	struct socket *sock;
 
-	if (forbid_cmsg_compat && (flags & MSG_CMSG_COMPAT))
+	if (forbid_cmsg_compat && (flags & MSG_CMSG_COMPAT)) {
+		pr_err("%s:%d %s(): !sock\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return -EINVAL;
+	}
 
 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
-	if (!sock)
+	if (!sock) {
+		pr_err("%s:%d %s(): !sock\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		goto out;
+	}
 
 	err = ___sys_recvmsg(sock, msg, &msg_sys, flags, 0);
 
 	fput_light(sock->file, fput_needed);
 out:
+	pr_err("%s:%d %s(): return err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 	return err;
 }
 
 SYSCALL_DEFINE3(recvmsg, int, fd, struct user_msghdr __user *, msg,
 		unsigned int, flags)
 {
+	pr_err_once("%s:%d %s(): SYSCALL_DEFINE3\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	return __sys_recvmsg(fd, msg, flags, true);
 }
 
@@ -2555,6 +2582,7 @@ static int do_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 			  unsigned int vlen, unsigned int flags,
 			  struct timespec64 *timeout)
 {
+	pr_err("%s:%d %s(): START \n", __FILE__, __LINE__, __func__); // FIXME: debug
 	int fput_needed, err, datagrams;
 	struct socket *sock;
 	struct mmsghdr __user *entry;
@@ -2565,17 +2593,22 @@ static int do_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 
 	if (timeout &&
 	    poll_select_set_timeout(&end_time, timeout->tv_sec,
-				    timeout->tv_nsec))
+				    timeout->tv_nsec)) {
+		pr_err("%s:%d %s(): EINVAL\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return -EINVAL;
+	}
 
 	datagrams = 0;
 
 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
-	if (!sock)
+	if (!sock) {
+		pr_err("%s:%d %s(): !sock (err: %d)\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		return err;
+	}
 
 	if (likely(!(flags & MSG_ERRQUEUE))) {
 		err = sock_error(sock->sk);
+		pr_err("%s:%d %s(): sock_error (err: %d)\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		if (err) {
 			datagrams = err;
 			goto out_put;
@@ -2586,6 +2619,7 @@ static int do_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 	compat_entry = (struct compat_mmsghdr __user *)mmsg;
 
 	while (datagrams < vlen) {
+		pr_err("%s:%d %s(): datagrams < vlen (%d < %d)\n", __FILE__, __LINE__, __func__, datagrams, vlen); // FIXME: debug
 		/*
 		 * No need to ask LSM for more than the first datagram.
 		 */
@@ -2593,8 +2627,11 @@ static int do_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 			err = ___sys_recvmsg(sock, (struct user_msghdr __user *)compat_entry,
 					     &msg_sys, flags & ~MSG_WAITFORONE,
 					     datagrams);
-			if (err < 0)
+			pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
+			if (err < 0) {
+				pr_err("%s:%d %s(): BREAK\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
+			}
 			err = __put_user(err, &compat_entry->msg_len);
 			++compat_entry;
 		} else {
@@ -2602,36 +2639,48 @@ static int do_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 					     (struct user_msghdr __user *)entry,
 					     &msg_sys, flags & ~MSG_WAITFORONE,
 					     datagrams);
-			if (err < 0)
+			pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
+			if (err < 0) {
+				pr_err("%s:%d %s(): BREAK\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
+			}
 			err = put_user(err, &entry->msg_len);
 			++entry;
 		}
+		pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 
 		if (err)
 			break;
 		++datagrams;
 
 		/* MSG_WAITFORONE turns on MSG_DONTWAIT after one packet */
-		if (flags & MSG_WAITFORONE)
+		if (flags & MSG_WAITFORONE) {
+			pr_err("%s:%d %s(): MSG_WAITFORONE\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			flags |= MSG_DONTWAIT;
+		}
 
 		if (timeout) {
+			pr_err("%s:%d %s(): TIMEOUT\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			ktime_get_ts64(&timeout64);
 			*timeout = timespec64_sub(end_time, timeout64);
 			if (timeout->tv_sec < 0) {
 				timeout->tv_sec = timeout->tv_nsec = 0;
+				pr_err("%s:%d %s(): BREAK (timeout->tv_sec: %d\n", __FILE__, __LINE__, __func__, timeout->tv_sec); // FIXME: debug
 				break;
 			}
 
 			/* Timeout, return less than vlen datagrams */
-			if (timeout->tv_nsec == 0 && timeout->tv_sec == 0)
+			if (timeout->tv_nsec == 0 && timeout->tv_sec == 0) {
+				pr_err("%s:%d %s(): BREAK (timeout->tv_nsec == 0 && timeout->tv_sec == 0)\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
+			}
 		}
 
 		/* Out of band data, return right away */
-		if (msg_sys.msg_flags & MSG_OOB)
+		if (msg_sys.msg_flags & MSG_OOB) {
+			pr_err("%s:%d %s(): BREAK MSG_OOB\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			break;
+		}
 		cond_resched();
 	}
 
@@ -2647,7 +2696,9 @@ static int do_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 	 * We may return less entries than requested (vlen) if the
 	 * sock is non block and there aren't enough datagrams...
 	 */
+	pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 	if (err != -EAGAIN) {
+		pr_err("%s:%d %s(): err != -EAGAIN\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		/*
 		 * ... or  if recvmsg returns an error after we
 		 * received some datagrams, where we record the
@@ -2667,6 +2718,7 @@ int __sys_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 		   struct __kernel_timespec __user *timeout,
 		   struct old_timespec32 __user *timeout32)
 {
+	pr_err("%s:%d %s(): START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	int datagrams;
 	struct timespec64 timeout_sys;
 
@@ -2681,15 +2733,22 @@ int __sys_recvmmsg(int fd, struct mmsghdr __user *mmsg,
 
 	datagrams = do_recvmmsg(fd, mmsg, vlen, flags, &timeout_sys);
 
-	if (datagrams <= 0)
+	if (datagrams <= 0) {
+		pr_err("%s:%d %s(): FAIL RETURN %d\n", __FILE__, __LINE__, __func__, datagrams); // FIXME: debug
 		return datagrams;
+	}
 
-	if (timeout && put_timespec64(&timeout_sys, timeout))
+	if (timeout && put_timespec64(&timeout_sys, timeout)) {
+		pr_err("%s:%d %s(): RETURN -EFAULT\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		datagrams = -EFAULT;
+	}
 
-	if (timeout32 && put_old_timespec32(&timeout_sys, timeout32))
+	if (timeout32 && put_old_timespec32(&timeout_sys, timeout32)) {
+		pr_err("%s:%d %s(): second RETURN -EFAULT\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		datagrams = -EFAULT;
+	}
 
+	pr_err("%s:%d %s(): END RETURN %d\n", __FILE__, __LINE__, __func__, datagrams); // FIXME: debug
 	return datagrams;
 }
 
@@ -2762,6 +2821,7 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
 	a1 = a[1];
 
 	switch (call) {
+	//pr_err("%s:%d %s(): call: %d\n", __FILE__, __LINE__, __func__, call); // FIXME: debug
 	case SYS_SOCKET:
 		err = __sys_socket(a0, a1, a[2]);
 		break;
@@ -2794,10 +2854,12 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
 	case SYS_SEND:
 		err = __sys_sendto(a0, (void __user *)a1, a[2], a[3],
 				   NULL, 0);
+		pr_err("%s:%d %s(): SYS_SEND return err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		break;
 	case SYS_SENDTO:
 		err = __sys_sendto(a0, (void __user *)a1, a[2], a[3],
 				   (struct sockaddr __user *)a[4], a[5]);
+		pr_err("%s:%d %s(): SYS_SENDTO return err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		break;
 	case SYS_RECV:
 		err = __sys_recvfrom(a0, (void __user *)a1, a[2], a[3],
@@ -2821,6 +2883,7 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
 				     (int __user *)a[4]);
 		break;
 	case SYS_SENDMSG:
+		//pr_err("%s:%d %s(): SYS_SENDMSG\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		err = __sys_sendmsg(a0, (struct user_msghdr __user *)a1,
 				    a[2], true);
 		break;
@@ -2831,6 +2894,8 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
 	case SYS_RECVMSG:
 		err = __sys_recvmsg(a0, (struct user_msghdr __user *)a1,
 				    a[2], true);
+		// TODO: take only 61252, 61253, 61272, 61273, 10, -11, -4
+		pr_err("%s:%d %s(): SYS_RECVMSG return err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		break;
 	case SYS_RECVMMSG:
 		if (IS_ENABLED(CONFIG_64BIT) || !IS_ENABLED(CONFIG_64BIT_TIME))
@@ -2849,6 +2914,8 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
 		break;
 	default:
 		err = -EINVAL;
+		//pr_err("%s:%d %s(): -EINVAL for call: %d\n", __FILE__, __LINE__, __func__, call); // FIXME: debug
+		pr_err("%s:%d %s(): -EINVAL for call: %d\n", __FILE__, __LINE__, __func__, call); // FIXME: debug
 		break;
 	}
 	return err;
