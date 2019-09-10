@@ -832,14 +832,20 @@ int inet_recvmsg(struct socket *sock, struct msghdr *msg, size_t size,
 	int addr_len = 0;
 	int err;
 
-	if (likely(!(flags & MSG_ERRQUEUE)))
-		sock_rps_record_flow(sk);
+	pr_err("%s:%d %s(): START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 
+	if (likely(!(flags & MSG_ERRQUEUE))) {
+		pr_err("%s:%d %s(): sock_rps_record_flow\n", __FILE__, __LINE__, __func__); // FIXME: debug
+		sock_rps_record_flow(sk);
+	}
+
+	pr_err("%s:%d %s(): before INDIRECT_CALL_2: size: %lu, sk->sk_prot->recvmsg: %p, tcp_recvmsg: %p, udp_recvmsg: %p\n", __FILE__, __LINE__, __func__, size, sk->sk_prot->recvmsg, tcp_recvmsg, udp_recvmsg); // FIXME: debug
 	err = INDIRECT_CALL_2(sk->sk_prot->recvmsg, tcp_recvmsg, udp_recvmsg,
 			      sk, msg, size, flags & MSG_DONTWAIT,
 			      flags & ~MSG_DONTWAIT, &addr_len);
 	if (err >= 0)
 		msg->msg_namelen = addr_len;
+	pr_err("%s:%d %s(): err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 	return err;
 }
 EXPORT_SYMBOL(inet_recvmsg);

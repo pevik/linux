@@ -1700,14 +1700,19 @@ int udp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int noblock,
 	int is_udplite = IS_UDPLITE(sk);
 	bool checksum_valid = false;
 
+	pr_err("%s:%d %s(): START\n", __FILE__, __LINE__, __func__); // FIXME: debug
+
 	if (flags & MSG_ERRQUEUE)
+		pr_err("%s:%d %s(): ip_recv_error\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return ip_recv_error(sk, msg, len, addr_len);
 
 try_again:
 	off = sk_peek_offset(sk, flags);
 	skb = __skb_recv_udp(sk, flags, noblock, &off, &err);
-	if (!skb)
+	if (!skb) {
+		pr_err("%s:%d %s(): !skb err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		return err;
+	}
 
 	ulen = udp_skb_len(skb);
 	copied = len;
@@ -1738,8 +1743,10 @@ try_again:
 	} else {
 		err = skb_copy_and_csum_datagram_msg(skb, off, msg);
 
-		if (err == -EINVAL)
+		if (err == -EINVAL) {
+			pr_err("%s:%d %s(): -EINVAL\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			goto csum_copy_err;
+		}
 	}
 
 	if (unlikely(err)) {
@@ -1749,6 +1756,7 @@ try_again:
 				      UDP_MIB_INERRORS, is_udplite);
 		}
 		kfree_skb(skb);
+		pr_err("%s:%d %s(): kfree_skb err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 		return err;
 	}
 
@@ -1782,6 +1790,7 @@ try_again:
 		err = ulen;
 
 	skb_consume_udp(sk, skb, peeking ? -err : err);
+	pr_err("%s:%d %s(): skb_consume_udp err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 	return err;
 
 csum_copy_err:
@@ -1795,6 +1804,7 @@ csum_copy_err:
 	/* starting over for a new packet, but check if we need to yield */
 	cond_resched();
 	msg->msg_flags &= ~MSG_TRUNC;
+	pr_err("%s:%d %s(): try_again\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	goto try_again;
 }
 
