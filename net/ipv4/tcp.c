@@ -1958,6 +1958,8 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 	bool has_tss = false;
 	bool has_cmsg;
 
+	pr_err("%s:%d %s(): START\n", __FILE__, __LINE__, __func__); // FIXME: debug
+
 	if (unlikely(flags & MSG_ERRQUEUE))
 		return inet_recv_error(sk, msg, len, addr_len);
 
@@ -1968,27 +1970,37 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 	lock_sock(sk);
 
 	err = -ENOTCONN;
-	if (sk->sk_state == TCP_LISTEN)
+	if (sk->sk_state == TCP_LISTEN) {
+		pr_err("%s:%d %s(): TCP_LISTEN => out\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		goto out;
+	}
 
 	has_cmsg = tp->recvmsg_inq;
 	timeo = sock_rcvtimeo(sk, nonblock);
 
 	/* Urgent data needs to be handled specially. */
-	if (flags & MSG_OOB)
+	if (flags & MSG_OOB) {
+		pr_err("%s:%d %s(): MSG_OOB => recv_urg\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		goto recv_urg;
+	}
 
 	if (unlikely(tp->repair)) {
 		err = -EPERM;
-		if (!(flags & MSG_PEEK))
+		if (!(flags & MSG_PEEK)) {
+			pr_err("%s:%d %s(): !MSG_PEEK => out\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			goto out;
+		}
 
-		if (tp->repair_queue == TCP_SEND_QUEUE)
+		if (tp->repair_queue == TCP_SEND_QUEUE) {
+			pr_err("%s:%d %s(): TCP_SEND_QUEUE => recv_sndq\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			goto recv_sndq;
+		}
 
 		err = -EINVAL;
-		if (tp->repair_queue == TCP_NO_QUEUE)
+		if (tp->repair_queue == TCP_NO_QUEUE) {
+			pr_err("%s:%d %s(): TCP_NO_QUEUE => out\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			goto out;
+		}
 
 		/* 'common' recv queue MSG_PEEK-ing */
 	}
@@ -2006,10 +2018,13 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 
 		/* Are we at urgent data? Stop if we have read anything or have SIGURG pending. */
 		if (tp->urg_data && tp->urg_seq == *seq) {
-			if (copied)
+			if (copied) {
+				pr_err("%s:%d %s(): copied: %d => break\n", __FILE__, __LINE__, __func__, copied); // FIXME: debug
 				break;
+			}
 			if (signal_pending(current)) {
 				copied = timeo ? sock_intr_errno(timeo) : -EAGAIN;
+				pr_err("%s:%d %s(): signal_pending: copied: %d\n", __FILE__, __LINE__, __func__, copied); // FIXME: debug
 				break;
 			}
 		}
@@ -2044,43 +2059,55 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 
 		/* Well, if we have backlog, try to process it now yet. */
 
-		if (copied >= target && !sk->sk_backlog.tail)
+		if (copied >= target && !sk->sk_backlog.tail) {
+			pr_err("%s:%d %s(): break 1\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			break;
+		}
 
 		if (copied) {
 			if (sk->sk_err ||
 			    sk->sk_state == TCP_CLOSE ||
 			    (sk->sk_shutdown & RCV_SHUTDOWN) ||
 			    !timeo ||
-			    signal_pending(current))
+			    signal_pending(current)) {
+				pr_err("%s:%d %s(): break 2\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
+			}
 		} else {
-			if (sock_flag(sk, SOCK_DONE))
-				break;
-
-			if (sk->sk_err) {
-				copied = sock_error(sk);
+			if (sock_flag(sk, SOCK_DONE)) {
+				pr_err("%s:%d %s(): break 3\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
 			}
 
-			if (sk->sk_shutdown & RCV_SHUTDOWN)
+			if (sk->sk_err) {
+				copied = sock_error(sk);
+				pr_err("%s:%d %s(): break 4\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
+			}
+
+			if (sk->sk_shutdown & RCV_SHUTDOWN) {
+				pr_err("%s:%d %s(): break 5 RCV_SHUTDOWN\n", __FILE__, __LINE__, __func__); // FIXME: debug
+				break;
+			}
 
 			if (sk->sk_state == TCP_CLOSE) {
 				/* This occurs when user tries to read
 				 * from never connected socket.
 				 */
 				copied = -ENOTCONN;
+				pr_err("%s:%d %s(): break 6 -ENOTCONNn", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
 			}
 
 			if (!timeo) {
 				copied = -EAGAIN;
+				pr_err("%s:%d %s(): !TIMEOUT -EAGAIN\n", __FILE__, __LINE__, __func__); // FIXME: debug
 				break;
 			}
 
 			if (signal_pending(current)) {
 				copied = sock_intr_errno(timeo);
+				pr_err("%s:%d %s(): signal_pending, timeo: %ld\n", __FILE__, __LINE__, __func__, timeo); // FIXME: debug
 				break;
 			}
 		}
@@ -2088,10 +2115,12 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 		tcp_cleanup_rbuf(sk, copied);
 
 		if (copied >= target) {
+			pr_err("%s:%d %s(): copied >= target (%d, %d)\n", __FILE__, __LINE__, __func__, copied, target); // FIXME: debug
 			/* Do not sleep, just process backlog. */
 			release_sock(sk);
 			lock_sock(sk);
 		} else {
+			pr_err("%s:%d %s(): ELSE copied >= target\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			sk_wait_data(sk, &timeo, last);
 		}
 
@@ -2189,18 +2218,22 @@ found_fin_ok:
 		}
 	}
 
+	pr_err("%s:%d %s(): return copied: %d\n", __FILE__, __LINE__, __func__, copied); // FIXME: debug
 	return copied;
 
 out:
 	release_sock(sk);
+	pr_err("%s:%d %s(): return err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 	return err;
 
 recv_urg:
 	err = tcp_recv_urg(sk, msg, len, flags);
+	pr_err("%s:%d %s(): recv_urg: err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 	goto out;
 
 recv_sndq:
 	err = tcp_peek_sndq(sk, msg, len);
+	pr_err("%s:%d %s(): recv_sndq: err: %d\n", __FILE__, __LINE__, __func__, err); // FIXME: debug
 	goto out;
 }
 EXPORT_SYMBOL(tcp_recvmsg);
