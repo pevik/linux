@@ -656,8 +656,25 @@ static void __init ima_pcrread(u32 idx, struct tpm_digest *d)
 		pr_err("Error Communicating to TPM chip\n");
 }
 
+/* tpm2_hash_map is the same as defined in tpm2-cmd.c and trusted_tpm2.c */
+static struct tpm2_hash tpm2_hash_map[] = {
+	{HASH_ALGO_SHA1, TPM_ALG_SHA1},
+	{HASH_ALGO_SHA256, TPM_ALG_SHA256},
+	{HASH_ALGO_SHA384, TPM_ALG_SHA384},
+	{HASH_ALGO_SHA512, TPM_ALG_SHA512},
+	{HASH_ALGO_SM3_256, TPM_ALG_SM3_256},
+};
+
 /*
- * Calculate the boot aggregate hash
+ * The boot_aggregate is a cumulative hash over TPM registers 0 - 7.  With
+ * TPM 2.0 hash agility, TPM chips could support multiple TPM PCR banks,
+ * allowing firmware to configure and enable different banks.
+ *
+ * Instead of hard coding the TPM bank hash algorithm used for calculating
+ * the boot-aggregate, see if the configured IMA_DEFAULT_HASH algorithm is
+ * an allocated TPM bank, otherwise use the first allocated TPM bank.
+ *
+ * For TPM 1.2 SHA1 is the only hash algorithm.
  */
 static int __init ima_calc_boot_aggregate_tfm(char *digest,
 					      struct crypto_shash *tfm)
@@ -672,6 +689,24 @@ static int __init ima_calc_boot_aggregate_tfm(char *digest,
 	rc = crypto_shash_init(shash);
 	if (rc != 0)
 		return rc;
+
+	for (i = 0; i < ARRAY_SIZE(tpm2_hash_map); i++) {
+		if (tpm2_hash_map[i].crypto_id == ima_hash_algo) {
+			d.alg_id = tpm2_hash_map[i].tpm_id;
+			break;
+		}
+	}
+
+	for (i = 0; i < ima_tpm_chip->nr_allocated_banks; i++) {
+		if (ima_tpm_chip->allocated_banks[i].alg_id == d.alg_id)
+			break;
+	}
+
+	if (i == ima_tpm_chip->nr_allocated_banks)
+		d.alg_id = ima_tpm_chip->allocated_banks[0].alg_id;
+
+	pr_info("Calculating the boot-aggregregate, reading TPM PCR bank: %04x",
+		d.alg_id);
 
 	/* cumulative sha1 over tpm registers 0-7 */
 	for (i = TPM_PCR0; i < TPM_PCR8; i++) {
