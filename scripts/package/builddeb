@@ -37,7 +37,7 @@ create_package() {
 		| xargs -r0 md5sum > DEBIAN/md5sums"
 
 	# Fix ownership and permissions
-	if [ "$DEB_RULES_REQUIRES_ROOT" = "no" ]; then
+	if [ -z "$DEB_RULES_REQUIRES_ROOT" -o "$DEB_RULES_REQUIRES_ROOT" = "no" ]; then
 		dpkg_deb_opts="--root-owner-group"
 	else
 		chown -R root:root "$pdir"
