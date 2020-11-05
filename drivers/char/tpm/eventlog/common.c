@@ -102,14 +102,17 @@ static int tpm_read_log(struct tpm_chip *chip)
  */
 void tpm_bios_log_setup(struct tpm_chip *chip)
 {
+	pr_err("%s:%d %s(): pev: START\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	const char *name = dev_name(&chip->dev);
 	unsigned int cnt;
 	int log_version;
 	int rc = 0;
 
 	rc = tpm_read_log(chip);
-	if (rc < 0)
+	if (rc < 0) {
+		pr_err("%s:%d %s(): pev: error: return\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		return;
+	}
 	log_version = rc;
 
 	cnt = 0;
@@ -117,8 +120,10 @@ void tpm_bios_log_setup(struct tpm_chip *chip)
 	/* NOTE: securityfs_create_dir can return ENODEV if securityfs is
 	 * compiled out. The caller should ignore the ENODEV return code.
 	 */
-	if (IS_ERR(chip->bios_dir[cnt]))
+	if (IS_ERR(chip->bios_dir[cnt])) {
+		pr_err("%s:%d %s(): pev: error: goto err\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		goto err;
+	}
 	cnt++;
 
 	chip->bin_log_seqops.chip = chip;
@@ -135,10 +140,13 @@ void tpm_bios_log_setup(struct tpm_chip *chip)
 				   0440, chip->bios_dir[0],
 				   (void *)&chip->bin_log_seqops,
 				   &tpm_bios_measurements_ops);
-	if (IS_ERR(chip->bios_dir[cnt]))
+	if (IS_ERR(chip->bios_dir[cnt])) {
+		pr_err("%s:%d %s(): pev: error: goto err\n", __FILE__, __LINE__, __func__); // FIXME: debug
 		goto err;
+	}
 	cnt++;
 
+	pr_err("%s:%d %s(): pev: before TPM_CHIP_FLAG_TPM2, cnt: %d\n", __FILE__, __LINE__, __func__, cnt); // FIXME: debug
 	if (!(chip->flags & TPM_CHIP_FLAG_TPM2)) {
 
 		chip->ascii_log_seqops.chip = chip;
@@ -150,14 +158,18 @@ void tpm_bios_log_setup(struct tpm_chip *chip)
 					       0440, chip->bios_dir[0],
 					       (void *)&chip->ascii_log_seqops,
 					       &tpm_bios_measurements_ops);
-		if (IS_ERR(chip->bios_dir[cnt]))
+		if (IS_ERR(chip->bios_dir[cnt])) {
+			pr_err("%s:%d %s(): pev: error: goto err\n", __FILE__, __LINE__, __func__); // FIXME: debug
 			goto err;
+	}
 		cnt++;
 	}
 
+	pr_err("%s:%d %s(): pev: ok :)\n", __FILE__, __LINE__, __func__); // FIXME: debug
 	return;
 
 err:
+	pr_err("%s:%d %s(): pev: error! cnt: %d\n", __FILE__, __LINE__, __func__, cnt); // FIXME: debug
 	chip->bios_dir[cnt] = NULL;
 	tpm_bios_log_teardown(chip);
 	return;
