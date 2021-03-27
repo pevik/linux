@@ -1390,6 +1390,9 @@ int gpiochip_add_data_with_key(struct gpio_chip *chip, void *data,
 		else
 			desc->flags = !chip->direction_input ?
 					(1 << FLAG_IS_OUT) : 0;
+
+		pr_info("%s:%d %s(): pev: %d: gdev->id: %d, gdev->label: '%s', flags: %d\n",
+				__FILE__, __LINE__, __func__, i, gdev->id, gdev->label, desc->flags); // FIXME: debug
 	}
 
 	acpi_gpiochip_add(chip);
