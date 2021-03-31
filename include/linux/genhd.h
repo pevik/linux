@@ -193,6 +193,15 @@ static inline int disk_max_parts(struct gendisk *disk)
 
 static inline bool disk_part_scan_enabled(struct gendisk *disk)
 {
+	pr_info("%s:%d %s(): pev: disk_max_parts(disk): %d\n",
+			__FILE__, __LINE__, __func__, disk_max_parts(disk));
+
+	pr_info("%s:%d %s(): pev: disk->flags & GENHD_FL_NO_PART_SCAN: %d\n",
+			__FILE__, __LINE__, __func__, disk->flags & GENHD_FL_NO_PART_SCAN);
+
+	pr_info("%s:%d %s(): pev: ret: %d\n", disk_max_parts(disk) > 1 &&
+		!(disk->flags & GENHD_FL_NO_PART_SCAN));
+
 	return disk_max_parts(disk) > 1 &&
 		!(disk->flags & GENHD_FL_NO_PART_SCAN);
 }

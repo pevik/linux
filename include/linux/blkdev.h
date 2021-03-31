@@ -1374,6 +1374,8 @@ extern int blk_verify_command(unsigned char *cmd, fmode_t mode);
 
 static inline bool bdev_is_partition(struct block_device *bdev)
 {
+	pr_info("%s:%d %s(): pev: bdev->bd_partno: %d\n",
+			__FILE__, __LINE__, __func__, bdev->bd_partno);
 	return bdev->bd_partno;
 }
 

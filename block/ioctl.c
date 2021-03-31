@@ -85,8 +85,10 @@ static int blkdev_reread_part(struct block_device *bdev, fmode_t mode)
 {
 	struct block_device *tmp;
 
-	if (!disk_part_scan_enabled(bdev->bd_disk) || bdev_is_partition(bdev))
+	if (!disk_part_scan_enabled(bdev->bd_disk) || bdev_is_partition(bdev)) {
+		pr_info("%s:%d %s(): pev: -EINVAL\n", __FILE__, __LINE__, __func__);
 		return -EINVAL;
+	}
 	if (!capable(CAP_SYS_ADMIN))
 		return -EACCES;
 
