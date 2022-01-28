@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2015, Huawei Inc. All rights reserved.
  * Copyright (c) 2016, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, Petr Vorel <petr.vorel@gmail.com>
+ * Copyright (c) 2021-2022, Petr Vorel <petr.vorel@gmail.com>
  */
 
 /dts-v1/;
 
 #include "msm8994.dtsi"
+#include "msm8994-rpm.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 /* Angler's firmware does not report where the memory is allocated */
@@ -41,6 +42,11 @@
 
 &tlmm {
 	gpio-reserved-ranges = <85 4>;
+};
+
+&vreg_lvs2a_1p8 {
+	regulator-always-on;
+	status = "okay";
 };
 
 /*
