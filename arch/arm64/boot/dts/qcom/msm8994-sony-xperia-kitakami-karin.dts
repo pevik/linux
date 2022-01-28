@@ -21,26 +21,26 @@
 	 */
 };
 
-&pm8994_l3 {
+&vreg_l3a_1p2 {
 	regulator-min-microvolt = <1050000>;
 	regulator-max-microvolt = <1050000>;
 };
 
-&pm8994_l17 {
+&vreg_l17a_2p7 {
 	regulator-min-microvolt = <2700000>;
 	regulator-max-microvolt = <2700000>;
 };
 
-&pm8994_l22 {
+&vreg_l22a_3p0 {
 	regulator-min-microvolt = <3100000>;
 	regulator-max-microvolt = <3100000>;
 };
 
-&pm8994_l25 {
+&vreg_l25a_1p1 {
 	regulator-min-microvolt = <1037500>;
 	regulator-max-microvolt = <1037500>;
 };
 
-/delete-node/ &pm8994_l32;
+/delete-node/ &vreg_l32a_1p8;
 /* Z4 tablets use a different touchscreen. */
 /delete-node/ &touchscreen;

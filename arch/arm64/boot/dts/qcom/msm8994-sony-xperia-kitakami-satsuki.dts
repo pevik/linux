@@ -13,7 +13,7 @@
 	chassis-type = "handset";
 };
 
-&pm8994_l14 {
+&vreg_l14a_1p8 {
 	regulator-min-microvolt = <1850000>;
 	regulator-max-microvolt = <1850000>;
 };

@@ -13,4 +13,4 @@
 	chassis-type = "handset";
 };
 
-/delete-node/ &pm8994_l19;
+/delete-node/ &vreg_l19a_3p3;
