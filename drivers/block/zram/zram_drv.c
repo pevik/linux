@@ -1091,6 +1091,8 @@ static ssize_t io_stat_show(struct device *dev,
 static ssize_t mm_stat_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
+	pr_info("START mm_stat_show\n");
+
 	struct zram *zram = dev_to_zram(dev);
 	struct zs_pool_stats pool_stats;
 	u64 orig_size, mem_used = 0;
@@ -1100,10 +1102,16 @@ static ssize_t mm_stat_show(struct device *dev,
 	memset(&pool_stats, 0x00, sizeof(struct zs_pool_stats));
 
 	down_read(&zram->init_lock);
+
+	pr_info("pev: mm_stat_show: before init_done, mem_used: %d\n", mem_used);
 	if (init_done(zram)) {
+		pr_info("pev: mm_stat_show: if init_done\n");
 		mem_used = zs_get_total_pages(zram->mem_pool);
 		zs_pool_stats(zram->mem_pool, &pool_stats);
+	} else {
+		pr_info("pev: mm_stat_show: init_done not being run\n");
 	}
+	pr_info("pev: mm_stat_show: after mem_used: %d\n", mem_used);
 
 	orig_size = atomic64_read(&zram->stats.pages_stored);
 	max_used = atomic_long_read(&zram->stats.max_used_pages);
