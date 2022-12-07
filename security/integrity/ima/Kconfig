@@ -269,13 +269,13 @@ config IMA_KEYRINGS_PERMIT_SIGNED_BY_BUILTIN_OR_SECONDARY
 	default n
 	help
 	  Keys may be added to the IMA or IMA blacklist keyrings, if the
-	  key is validly signed by a CA cert in the system built-in or
-	  secondary trusted keyrings.
+	  key is validly signed by a CA cert in the system built-in,
+	  secondary trusted, or machine keyrings.
 
 	  Intermediate keys between those the kernel has compiled in and the
 	  IMA keys to be added may be added to the system secondary keyring,
 	  provided they are validly signed by a key already resident in the
-	  built-in or secondary trusted keyrings.
+	  built-in, secondary trusted or machine keyrings.
 
 config IMA_BLACKLIST_KEYRING
 	bool "Create IMA machine owner blacklist keyrings (EXPERIMENTAL)"
