@@ -39,6 +39,7 @@ struct x509_certificate {
 	bool		unsupported_sig;	/* T if signature uses unsupported crypto */
 	bool		blacklisted;
 	bool		root_ca;		/* T if basic constraints CA is set */
+	bool		kcs_set;		/* T if keyCertSign is set */
 };
 
 /*
