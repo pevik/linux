@@ -26,6 +26,7 @@ struct public_key {
 	void *params;
 	u32 paramlen;
 	bool key_is_private;
+	bool key_is_ca;
 	const char *id_type;
 	const char *pkey_algo;
 };
@@ -75,6 +76,21 @@ extern int restrict_link_by_ca_and_signature(struct key *dest_keyring,
 					      const struct key_type *type,
 					      const union key_payload *payload,
 					      struct key *unused);
+
+#if IS_REACHABLE(CONFIG_ASYMMETRIC_KEY_TYPE)
+extern int restrict_link_by_ca(struct key *dest_keyring,
+			       const struct key_type *type,
+			       const union key_payload *payload,
+			       struct key *trust_keyring);
+#else
+static inline int restrict_link_by_ca(struct key *dest_keyring,
+				      const struct key_type *type,
+				      const union key_payload *payload,
+				      struct key *trust_keyring)
+{
+	return 0;
+}
+#endif
 
 extern int query_asymmetric_key(const struct kernel_pkey_params *,
 				struct kernel_pkey_query *);

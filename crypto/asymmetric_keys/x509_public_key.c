@@ -209,8 +209,11 @@ static int x509_key_preparse(struct key_preparsed_payload *prep)
 	}
 
 	if (cert->kcs_set) {
-		if (cert->self_signed && cert->root_ca)
+		if (cert->self_signed && cert->root_ca) {
 			prep->payload_flags |= KEY_ALLOC_PECA;
+			cert->pub->key_is_ca = true;
+		}
+
 		/*
 		 * In this case it could be an Intermediate CA.  Set
 		 * KEY_MAYBE_PECA for now.  If the restriction check
