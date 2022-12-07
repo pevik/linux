@@ -74,6 +74,16 @@ config INTEGRITY_MACHINE_KEYRING
 	 in the platform keyring, keys contained in the .machine keyring will
 	 be trusted within the kernel.
 
+config INTEGRITY_CA_MACHINE_KEYRING
+	bool "Only allow CA keys into the Machine Keyring"
+	depends on INTEGRITY_MACHINE_KEYRING
+	help
+	 If set, only Machine Owner Keys (MOK) that are Certificate
+	 Authority (CA) keys will be added to the .machine keyring. All
+	 other MOK keys will be added to the .platform keyring.  After
+	 booting, any other key signed by the CA key can be added to the
+	 secondary_trusted_keys keyring.
+
 config LOAD_UEFI_KEYS
        depends on INTEGRITY_PLATFORM_KEYRING
        depends on EFI
