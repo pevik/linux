@@ -24,9 +24,13 @@ extern int restrict_link_by_builtin_trusted(struct key *keyring,
 					    const union key_payload *payload,
 					    struct key *restriction_key);
 extern __init int load_module_cert(struct key *keyring);
-
+extern int restrict_link_by_ca_builtin_trusted(struct key *keyring,
+						const struct key_type *type,
+						const union key_payload *payload,
+						struct key *unused);
 #else
 #define restrict_link_by_builtin_trusted restrict_link_reject
+#define restrict_link_by_ca_builtin_trusted restrict_link_reject
 
 static inline __init int load_module_cert(struct key *keyring)
 {
@@ -41,8 +45,14 @@ extern int restrict_link_by_builtin_and_secondary_trusted(
 	const struct key_type *type,
 	const union key_payload *payload,
 	struct key *restriction_key);
+extern int restrict_link_by_ca_builtin_and_secondary_trusted(
+	struct key *dest_keyring,
+	const struct key_type *type,
+	const union key_payload *payload,
+	struct key *restrict_key);
 #else
 #define restrict_link_by_builtin_and_secondary_trusted restrict_link_by_builtin_trusted
+#define restrict_link_by_ca_builtin_and_secondary_trusted restrict_link_by_builtin_trusted
 #endif
 
 #ifdef CONFIG_INTEGRITY_MACHINE_KEYRING

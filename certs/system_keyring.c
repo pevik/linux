@@ -51,6 +51,14 @@ int restrict_link_by_builtin_trusted(struct key *dest_keyring,
 					  builtin_trusted_keys);
 }
 
+int restrict_link_by_ca_builtin_trusted(struct key *dest_keyring,
+					 const struct key_type *type,
+					 const union key_payload *payload,
+					 struct key *unused)
+{
+	return restrict_link_by_ca_and_signature(dest_keyring, type, payload,
+						  builtin_trusted_keys);
+}
 #ifdef CONFIG_SECONDARY_TRUSTED_KEYRING
 /**
  * restrict_link_by_builtin_and_secondary_trusted - Restrict keyring
@@ -81,6 +89,16 @@ int restrict_link_by_builtin_and_secondary_trusted(
 
 	return restrict_link_by_signature(dest_keyring, type, payload,
 					  secondary_trusted_keys);
+}
+
+int restrict_link_by_ca_builtin_and_secondary_trusted(
+	struct key *dest_keyring,
+	const struct key_type *type,
+	const union key_payload *payload,
+	struct key *unused)
+{
+	return restrict_link_by_ca_and_signature(dest_keyring, type, payload,
+						  secondary_trusted_keys);
 }
 
 /*

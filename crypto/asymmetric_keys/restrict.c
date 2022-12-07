@@ -108,6 +108,47 @@ int restrict_link_by_signature(struct key *dest_keyring,
 	return ret;
 }
 
+int restrict_link_by_ca_and_signature(struct key *dest_keyring,
+				       const struct key_type *type,
+				       const union key_payload *payload,
+				       struct key *trust_keyring)
+{
+	const struct public_key_signature *sig;
+	struct key *key;
+	int ret;
+
+	if (!trust_keyring)
+		return -ENOKEY;
+
+	if (type != &key_type_asymmetric)
+		return -EOPNOTSUPP;
+
+	sig = payload->data[asym_auth];
+	if (!sig)
+		return -ENOPKG;
+	if (!sig->auth_ids[0] && !sig->auth_ids[1] && !sig->auth_ids[2])
+		return -ENOKEY;
+
+	if (ca_keyid && !asymmetric_key_id_partial(sig->auth_ids[1], ca_keyid))
+		return -EPERM;
+
+	/* See if we have a key that signed this one. */
+	key = find_asymmetric_key(trust_keyring,
+				  sig->auth_ids[0], sig->auth_ids[1],
+				  sig->auth_ids[2], false);
+	if (IS_ERR(key))
+		return -ENOKEY;
+
+	if (!test_bit(KEY_FLAG_ECA, &key->flags))
+		ret = -ENOKEY;
+	else if (use_builtin_keys && !test_bit(KEY_FLAG_BUILTIN, &key->flags))
+		ret = -ENOKEY;
+	else
+		ret = verify_signature(key, sig);
+	key_put(key);
+	return ret;
+}
+
 static bool match_either_id(const struct asymmetric_key_id **pair,
 			    const struct asymmetric_key_id *single)
 {
