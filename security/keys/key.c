@@ -900,6 +900,11 @@ key_ref_t key_create_or_update(key_ref_t keyring_ref,
 		}
 	}
 
+	/* Previous restriction check passed therefore try to validate endorsed ca */
+	if ((prep.payload_flags & KEY_MAYBE_PECA) &&
+	   !(ima_validate_builtin_ca(keyring, index_key.type, &prep.payload, NULL)))
+		prep.payload_flags |= KEY_ALLOC_PECA;
+
 	/* if we're going to allocate a new key, we're going to have
 	 * to modify the keyring */
 	ret = key_permission(keyring_ref, KEY_NEED_WRITE);

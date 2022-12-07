@@ -12,6 +12,7 @@
 #include <linux/security.h>
 #include <linux/kexec.h>
 #include <crypto/hash_info.h>
+#include <keys/system_keyring.h>
 struct linux_binprm;
 
 #ifdef CONFIG_IMA
@@ -180,6 +181,16 @@ static inline void ima_post_key_create_or_update(struct key *keyring,
 						 unsigned long flags,
 						 bool create) {}
 #endif  /* CONFIG_IMA_MEASURE_ASYMMETRIC_KEYS */
+
+#ifdef CONFIG_ASYMMETRIC_KEY_TYPE
+#ifdef CONFIG_SECONDARY_TRUSTED_KEYRING
+#define ima_validate_builtin_ca restrict_link_by_ca_builtin_and_secondary_trusted
+#else
+#define ima_validate_builtin_ca restrict_link_by_ca_builtin_trusted
+#endif
+#else
+#define ima_validate_builtin_ca restrict_link_reject
+#endif
 
 #ifdef CONFIG_IMA_APPRAISE
 extern bool is_ima_appraise_enabled(void);

@@ -38,6 +38,7 @@ struct key_preparsed_payload {
 	time64_t	expiry;		/* Expiry time of key */
 	unsigned int	payload_flags;  /* Proposed payload flags */
 #define KEY_ALLOC_PECA	0x0001		/* Proposed Endorsed CA (ECA) key */
+#define KEY_MAYBE_PECA	0x0002		/* Proposed possible ECA key */
 } __randomize_layout;
 
 typedef int (*request_key_actor_t)(struct key *auth_key, void *aux);

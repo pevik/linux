@@ -208,8 +208,18 @@ static int x509_key_preparse(struct key_preparsed_payload *prep)
 		goto error_free_kids;
 	}
 
-	if (cert->kcs_set && cert->self_signed && cert->root_ca)
-		prep->payload_flags |= KEY_ALLOC_PECA;
+	if (cert->kcs_set) {
+		if (cert->self_signed && cert->root_ca)
+			prep->payload_flags |= KEY_ALLOC_PECA;
+		/*
+		 * In this case it could be an Intermediate CA.  Set
+		 * KEY_MAYBE_PECA for now.  If the restriction check
+		 * passes later, the key will be allocated with the
+		 * correct CA flag
+		 */
+		else if (!cert->self_signed && !cert->root_ca)
+			prep->payload_flags |= KEY_MAYBE_PECA;
+	}
 
 	/* We're pinning the module by being linked against it */
 	__module_get(public_key_subtype.owner);
