@@ -305,6 +305,8 @@ struct key *key_alloc(struct key_type *type, const char *desc,
 		key->flags |= 1 << KEY_FLAG_UID_KEYRING;
 	if (flags & KEY_ALLOC_SET_KEEP)
 		key->flags |= 1 << KEY_FLAG_KEEP;
+	if (flags & KEY_ALLOC_ECA)
+		key->flags |= 1 << KEY_FLAG_ECA;
 
 #ifdef KEY_DEBUGGING
 	key->magic = KEY_DEBUG_MAGIC;
@@ -928,6 +930,12 @@ key_ref_t key_create_or_update(key_ref_t keyring_ref,
 		    index_key.type->update)
 			perm |= KEY_POS_WRITE;
 	}
+
+	/* Only allow KEY_ALLOC_ECA flag to be set by preparser contents */
+	if (prep.payload_flags & KEY_ALLOC_PECA)
+		flags |= KEY_ALLOC_ECA;
+	else
+		flags &= ~KEY_ALLOC_ECA;
 
 	/* allocate a new key */
 	key = key_alloc(index_key.type, index_key.description,

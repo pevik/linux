@@ -208,6 +208,9 @@ static int x509_key_preparse(struct key_preparsed_payload *prep)
 		goto error_free_kids;
 	}
 
+	if (cert->kcs_set && cert->self_signed && cert->root_ca)
+		prep->payload_flags |= KEY_ALLOC_PECA;
+
 	/* We're pinning the module by being linked against it */
 	__module_get(public_key_subtype.owner);
 	prep->payload.data[asym_subtype] = &public_key_subtype;

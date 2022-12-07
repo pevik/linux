@@ -36,6 +36,8 @@ struct key_preparsed_payload {
 	size_t		datalen;	/* Raw datalen */
 	size_t		quotalen;	/* Quota length for proposed payload */
 	time64_t	expiry;		/* Expiry time of key */
+	unsigned int	payload_flags;  /* Proposed payload flags */
+#define KEY_ALLOC_PECA	0x0001		/* Proposed Endorsed CA (ECA) key */
 } __randomize_layout;
 
 typedef int (*request_key_actor_t)(struct key *auth_key, void *aux);
