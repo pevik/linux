@@ -459,12 +459,7 @@ static int ima_release_policy(struct inode *inode, struct file *file)
 	if ((file->f_flags & O_ACCMODE) == O_RDONLY)
 		return seq_release(inode, file);
 
-	if (valid_policy && ima_check_policy() < 0) {
-		cause = "failed";
-		valid_policy = 0;
-	}
-
-	pr_info("policy update %s\n", cause);
+	pr_info("IMA: policy update %s\n", cause);
 	integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL, NULL,
 			    "policy_update", cause, !valid_policy, 0);
 
