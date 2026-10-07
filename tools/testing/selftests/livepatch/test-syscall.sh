@@ -5,6 +5,16 @@
 
 . $(dirname $0)/functions.sh
 
+echo "pev: PWD: $PWD"
+echo "pev: ../"
+ls -la ../
+echo "pev: ../../"
+ls -la ../../
+echo "pev: ../../kexec/"
+ls -la ../../kexec/
+
+. $(dirname $0)/../../kexec/kexec_common_lib.sh
+
 MOD_SYSCALL=test_klp_syscall
 
 setup_config
@@ -14,6 +24,19 @@ setup_config
 #   state.
 
 start_test "patch getpid syscall while being heavily hammered"
+
+# FIXME: debug
+get_secureboot_mode
+echo "pev: get_secureboot_mode: '$?'"
+# FIXME: debug
+
+get_secureboot_mode
+if [ $? -eq 1 ]; then
+	echo "pev: *skip* SB" # FIXME: debug
+	skip "cannot load unsigned modules in Secure Boot"
+else
+	echo "pev: do *not* skip SB" # FIXME: debug
+fi
 
 NPROC=$(getconf _NPROCESSORS_ONLN)
 MAXPROC=128
